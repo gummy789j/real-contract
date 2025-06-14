@@ -24,26 +24,35 @@ contract RealContract is
     bool public running;
 
     IERC20 public immutable compensationToken;
+    IERC20 public immutable voteToken;
 
     uint256 public feeRateForStakeCompensation;
     uint256 public feeRateForExecuteCase;
+
+    uint256 public voteTokenAmount;
 
     constructor(
         address _owner,
         address _voter,
         address _compensationToken,
+        address _voteToken,
         address _participantA,
         address _participantB,
         uint256 _feeRateForStakeCompensation,
-        uint256 _feeRateForExecuteCase
+        uint256 _feeRateForExecuteCase,
+        uint256 _voteTokenAmount
     ) Governance(_owner) {
         voter = IVoter(_voter);
         compensationToken = IERC20(_compensationToken);
+        if (_voteToken != address(0)) {
+            voteToken = IERC20(_voteToken);
+        }
         participantA = _participantA;
         participantB = _participantB;
         running = true;
         feeRateForStakeCompensation = _feeRateForStakeCompensation;
         feeRateForExecuteCase = _feeRateForExecuteCase;
+        voteTokenAmount = _voteTokenAmount;
     }
 
     modifier onlyParticipantOrGovernance() {
@@ -64,6 +73,11 @@ contract RealContract is
         _;
     }
 
+    modifier onlyVoter() {
+        require(voter.isVoter(msg.sender), "Sender is not a voter");
+        _;
+    }
+
     modifier onlyRunning() {
         require(running, "Contract is not running");
         _;
@@ -72,6 +86,24 @@ contract RealContract is
     function setRunning(bool _running) public onlyGovernance {
         running = _running;
         emit ContractStatusChanged(_running);
+    }
+
+    function setVoteTokenAmount(
+        uint256 _voteTokenAmount
+    ) public onlyGovernance {
+        voteTokenAmount = _voteTokenAmount;
+    }
+
+    function setFeeRateForStakeCompensation(
+        uint256 _feeRateForStakeCompensation
+    ) public onlyGovernance {
+        feeRateForStakeCompensation = _feeRateForStakeCompensation;
+    }
+
+    function setFeeRateForExecuteCase(
+        uint256 _feeRateForExecuteCase
+    ) public onlyGovernance {
+        feeRateForExecuteCase = _feeRateForExecuteCase;
     }
 
     // 添加案件
@@ -144,7 +176,10 @@ contract RealContract is
     }
 
     // 案件投票
-    function vote(uint256 _caseNum, address _voteFor) public onlyRunning {
+    function vote(
+        uint256 _caseNum,
+        address _voteFor
+    ) public payable onlyVoter onlyRunning nonReentrant {
         require(
             cases[_caseNum].status == CaseStatus.Voting,
             "Case is not voting"
@@ -164,6 +199,17 @@ contract RealContract is
         cases[_caseNum].voterIsVoted[msg.sender] = true;
         cases[_caseNum].voters.push(msg.sender);
         cases[_caseNum].voterVotes[_voteFor]++;
+
+        if (address(voteToken) != address(0)) {
+            voteToken.safeTransferFrom(
+                msg.sender,
+                address(this),
+                voteTokenAmount
+            );
+        } else {
+            //native token
+            require(msg.value >= voteTokenAmount, "Insufficient vote token");
+        }
 
         emit CaseVoted(_caseNum, msg.sender, _voteFor);
     }

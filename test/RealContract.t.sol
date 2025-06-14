@@ -40,10 +40,12 @@ contract RealContractTest is Test {
             owner,
             address(voter),
             address(compensationToken),
+            address(0), // voteToken address (0 for native token)
             participantA,
             participantB,
             feeRateForStakeCompensation,
-            feeRateForExecuteCase
+            feeRateForExecuteCase,
+            1 ether // voteTokenAmount
         );
 
         // 給參與者一些代幣
@@ -55,6 +57,12 @@ contract RealContractTest is Test {
         // 添加投票者
         voter.addVoter(voter1);
         voter.addVoter(voter2);
+
+        vm.deal(voter1, 1000 * 10 ** 18);
+        vm.deal(voter2, 1000 * 10 ** 18);
+        vm.deal(participantA, 1000 * 10 ** 18);
+        vm.deal(participantB, 1000 * 10 ** 18);
+        vm.deal(owner, 1000 * 10 ** 18);
     }
 
     function test_Deployment() public view {
@@ -191,8 +199,110 @@ contract RealContractTest is Test {
         vm.prank(voter1);
         vm.expectEmit(true, true, false, false);
         emit IRealContract.CaseVoted(0, voter1, participantA);
-        realContract.vote(0, participantA);
+        realContract.vote{value: 1 ether}(0, participantA);
         assertEq(realContract.getCaseVoterVotes(0, participantA), 1);
+    }
+
+    function test_RevertWhen_NonVoterVotes() public {
+        // 設置案件
+        {
+            vm.startPrank(participantA);
+            ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
+                caseName: "Test Case",
+                caseDescription: "Test Description",
+                participantA: participantA,
+                participantB: participantB,
+                compensationA: 100 * 10 ** 18,
+                compensationB: 100 * 10 ** 18,
+                winnerIfEqualVotes: participantA,
+                votingDuration: 1 days
+            });
+            realContract.addCase(newCase);
+            compensationToken.approve(address(realContract), type(uint256).max);
+            realContract.stakeCompensation(0, true);
+            vm.stopPrank();
+        }
+        {
+            vm.startPrank(participantB);
+            compensationToken.approve(address(realContract), type(uint256).max);
+            realContract.stakeCompensation(0, false);
+            vm.stopPrank();
+        }
+        // 開始投票
+        vm.prank(participantA);
+        realContract.startCaseVoting(0);
+        // 非投票者嘗試投票
+        vm.prank(participantA); // 非投票者地址
+        vm.expectRevert("Sender is not a voter");
+        realContract.vote{value: 1 ether}(0, participantA);
+    }
+
+    function test_RevertWhen_VoteTwice() public {
+        // 設置案件
+        vm.startPrank(participantA);
+        ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
+            caseName: "Test Case",
+            caseDescription: "Test Description",
+            participantA: participantA,
+            participantB: participantB,
+            compensationA: 100 * 10 ** 18,
+            compensationB: 100 * 10 ** 18,
+            winnerIfEqualVotes: participantA,
+            votingDuration: 1 days
+        });
+        realContract.addCase(newCase);
+        compensationToken.approve(address(realContract), type(uint256).max);
+        realContract.stakeCompensation(0, true);
+        vm.stopPrank();
+
+        vm.startPrank(participantB);
+        compensationToken.approve(address(realContract), type(uint256).max);
+        realContract.stakeCompensation(0, false);
+        vm.stopPrank();
+
+        vm.prank(participantA);
+        realContract.startCaseVoting(0);
+
+        vm.prank(voter1);
+        realContract.vote{value: 1 ether}(0, participantA);
+        vm.prank(voter1);
+        vm.expectRevert("Voter has already voted");
+        realContract.vote{value: 1 ether}(0, participantA);
+    }
+
+    function test_RevertWhen_InsufficientVoteToken() public {
+        // 設置案件
+        {
+            vm.startPrank(participantA);
+            ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
+                caseName: "Test Case",
+                caseDescription: "Test Description",
+                participantA: participantA,
+                participantB: participantB,
+                compensationA: 100 * 10 ** 18,
+                compensationB: 100 * 10 ** 18,
+                winnerIfEqualVotes: participantA,
+                votingDuration: 1 days
+            });
+            realContract.addCase(newCase);
+            compensationToken.approve(address(realContract), type(uint256).max);
+            realContract.stakeCompensation(0, true);
+            vm.stopPrank();
+        }
+        {
+            vm.startPrank(participantB);
+            compensationToken.approve(address(realContract), type(uint256).max);
+            realContract.stakeCompensation(0, false);
+            vm.stopPrank();
+        }
+        console.log("check1");
+        // 開始投票
+        vm.prank(participantA);
+        realContract.startCaseVoting(0);
+        // 嘗試使用不足的投票代幣
+        vm.prank(voter1);
+        vm.expectRevert("Insufficient vote token");
+        realContract.vote{value: 0.5 ether}(0, participantA);
     }
 
     function test_ExecuteCase() public {
@@ -220,11 +330,15 @@ contract RealContractTest is Test {
             realContract.stakeCompensation(0, false);
             vm.stopPrank();
         }
-        vm.prank(participantA);
+        vm.startPrank(participantA);
         realContract.startCaseVoting(0);
-        realContract.vote(0, participantA);
+        vm.stopPrank();
+
+        vm.prank(voter1);
+        realContract.vote{value: 1 ether}(0, participantA);
+
+        vm.startPrank(participantB);
         vm.warp(block.timestamp + 1 days + 1);
-        vm.prank(participantA);
         vm.expectEmit(true, true, false, false);
         emit IRealContract.CaseExecuted(0, participantA);
         realContract.executeCase(0);
@@ -232,6 +346,7 @@ contract RealContractTest is Test {
             uint256(realContract.getCaseStatus(0)),
             uint256(ICaseManager.CaseStatus.Executed)
         );
+        vm.stopPrank();
     }
 
     function test_CancelCase() public {
@@ -300,38 +415,5 @@ contract RealContractTest is Test {
         vm.expectRevert("Sender is not a participant");
         realContract.addCase(newCase);
         vm.stopPrank();
-    }
-
-    function test_RevertWhen_VoteTwice() public {
-        // 設置案件
-        vm.startPrank(participantA);
-        ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
-            caseName: "Test Case",
-            caseDescription: "Test Description",
-            participantA: participantA,
-            participantB: participantB,
-            compensationA: 100 * 10 ** 18,
-            compensationB: 100 * 10 ** 18,
-            winnerIfEqualVotes: participantA,
-            votingDuration: 1 days
-        });
-        realContract.addCase(newCase);
-        compensationToken.approve(address(realContract), type(uint256).max);
-        realContract.stakeCompensation(0, true);
-        vm.stopPrank();
-
-        vm.startPrank(participantB);
-        compensationToken.approve(address(realContract), type(uint256).max);
-        realContract.stakeCompensation(0, false);
-        vm.stopPrank();
-
-        vm.prank(participantA);
-        realContract.startCaseVoting(0);
-
-        vm.prank(voter1);
-        realContract.vote(0, participantA);
-        vm.prank(voter1);
-        vm.expectRevert("Voter has already voted");
-        realContract.vote(0, participantA);
     }
 }
