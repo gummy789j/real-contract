@@ -229,31 +229,17 @@ contract RealContract is
 
         _executeCase(_caseNum, participantA, participantB);
 
-        // 收取手續費
-        uint256 feeA = (cases[_caseNum].compensationA * feeRateForExecuteCase) /
-            10000;
-        uint256 feeB = (cases[_caseNum].compensationB * feeRateForExecuteCase) /
-            10000;
+        uint256 totalCompensation = cases[_caseNum].compensationA +
+            cases[_caseNum].compensationB;
 
-        // 轉移代幣給勝者
+        // 收取手續費
+        uint256 fee = (totalCompensation * feeRateForExecuteCase) / 10000;
+
+        // 轉移代幣給勝者 compensationA + compensationB - fee
         if (cases[_caseNum].winner == participantA) {
-            compensationToken.transfer(
-                participantA,
-                cases[_caseNum].compensationA - feeA
-            );
-            compensationToken.transfer(
-                participantB,
-                cases[_caseNum].compensationB - feeB
-            );
+            compensationToken.transfer(participantA, totalCompensation - fee);
         } else if (cases[_caseNum].winner == participantB) {
-            compensationToken.transfer(
-                participantB,
-                cases[_caseNum].compensationB - feeB
-            );
-            compensationToken.transfer(
-                participantA,
-                cases[_caseNum].compensationA - feeA
-            );
+            compensationToken.transfer(participantB, totalCompensation - fee);
         }
 
         emit CaseExecuted(_caseNum, cases[_caseNum].winner);
@@ -261,16 +247,6 @@ contract RealContract is
 
     // 檢查案件
     function _checkCase(CaseInit calldata _case) internal view {
-        require(
-            _case.participantA == participantA ||
-                _case.participantA == participantB,
-            "Participant A is not a participant"
-        );
-        require(
-            _case.participantB == participantA ||
-                _case.participantB == participantB,
-            "Participant B is not a participant"
-        );
         require(
             _case.compensationA > 0 && _case.compensationB > 0,
             "Compensation must be greater than 0"
@@ -282,8 +258,8 @@ contract RealContract is
         );
 
         require(
-            _case.winnerIfEqualVotes == _case.participantA ||
-                _case.winnerIfEqualVotes == _case.participantB,
+            _case.winnerIfEqualVotes == participantA ||
+                _case.winnerIfEqualVotes == participantB,
             "Winner if equal votes must be a participant"
         );
     }

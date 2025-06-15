@@ -259,4 +259,8 @@ abstract contract CaseManager is Governance, ICaseManager {
     function getCaseIsPaidB(uint256 caseNum) public view returns (bool) {
         return cases[caseNum].isPaidB;
     }
+
+    function getCaseNumber() public view returns (uint256) {
+        return currentCaseNum + 1;
+    }
 }

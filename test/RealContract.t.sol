@@ -86,8 +86,6 @@ contract RealContractTest is Test {
         ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
             caseName: "Test Case",
             caseDescription: "Test Description",
-            participantA: participantA,
-            participantB: participantB,
             compensationA: 100 * 10 ** 18,
             compensationB: 100 * 10 ** 18,
             winnerIfEqualVotes: participantA,
@@ -102,23 +100,6 @@ contract RealContractTest is Test {
         );
     }
 
-    function test_RevertWhen_AddCaseWithInvalidParticipant() public {
-        vm.startPrank(participantA);
-        ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
-            caseName: "Test Case",
-            caseDescription: "Test Description",
-            participantA: address(0x5), // 無效的參與者
-            participantB: participantB,
-            compensationA: 100 * 10 ** 18,
-            compensationB: 100 * 10 ** 18,
-            winnerIfEqualVotes: participantA,
-            votingDuration: 1 days
-        });
-        vm.expectRevert("Participant A is not a participant");
-        realContract.addCase(newCase);
-        vm.stopPrank();
-    }
-
     function test_StakeCompensation() public {
         // 每次 nonReentrant 函數都用新的 prank
         {
@@ -126,8 +107,6 @@ contract RealContractTest is Test {
             ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
                 caseName: "Test Case",
                 caseDescription: "Test Description",
-                participantA: participantA,
-                participantB: participantB,
                 compensationA: 100 * 10 ** 18,
                 compensationB: 100 * 10 ** 18,
                 winnerIfEqualVotes: participantA,
@@ -152,8 +131,6 @@ contract RealContractTest is Test {
         ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
             caseName: "Test Case",
             caseDescription: "Test Description",
-            participantA: participantA,
-            participantB: participantB,
             compensationA: 100 * 10 ** 18,
             compensationB: 100 * 10 ** 18,
             winnerIfEqualVotes: participantA,
@@ -174,8 +151,6 @@ contract RealContractTest is Test {
             ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
                 caseName: "Test Case",
                 caseDescription: "Test Description",
-                participantA: participantA,
-                participantB: participantB,
                 compensationA: 100 * 10 ** 18,
                 compensationB: 100 * 10 ** 18,
                 winnerIfEqualVotes: participantA,
@@ -210,8 +185,6 @@ contract RealContractTest is Test {
             ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
                 caseName: "Test Case",
                 caseDescription: "Test Description",
-                participantA: participantA,
-                participantB: participantB,
                 compensationA: 100 * 10 ** 18,
                 compensationB: 100 * 10 ** 18,
                 winnerIfEqualVotes: participantA,
@@ -243,8 +216,6 @@ contract RealContractTest is Test {
         ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
             caseName: "Test Case",
             caseDescription: "Test Description",
-            participantA: participantA,
-            participantB: participantB,
             compensationA: 100 * 10 ** 18,
             compensationB: 100 * 10 ** 18,
             winnerIfEqualVotes: participantA,
@@ -277,8 +248,6 @@ contract RealContractTest is Test {
             ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
                 caseName: "Test Case",
                 caseDescription: "Test Description",
-                participantA: participantA,
-                participantB: participantB,
                 compensationA: 100 * 10 ** 18,
                 compensationB: 100 * 10 ** 18,
                 winnerIfEqualVotes: participantA,
@@ -312,8 +281,6 @@ contract RealContractTest is Test {
             ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
                 caseName: "Test Case",
                 caseDescription: "Test Description",
-                participantA: participantA,
-                participantB: participantB,
                 compensationA: 100 * 10 ** 18,
                 compensationB: 100 * 10 ** 18,
                 winnerIfEqualVotes: participantA,
@@ -356,8 +323,6 @@ contract RealContractTest is Test {
             ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
                 caseName: "Test Case",
                 caseDescription: "Test Description",
-                participantA: participantA,
-                participantB: participantB,
                 compensationA: 100 * 10 ** 18,
                 compensationB: 100 * 10 ** 18,
                 winnerIfEqualVotes: participantA,
@@ -405,8 +370,6 @@ contract RealContractTest is Test {
         ICaseManager.CaseInit memory newCase = ICaseManager.CaseInit({
             caseName: "Test Case",
             caseDescription: "Test Description",
-            participantA: participantA,
-            participantB: participantB,
             compensationA: 100 * 10 ** 18,
             compensationB: 100 * 10 ** 18,
             winnerIfEqualVotes: participantA,

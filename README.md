@@ -1,155 +1,67 @@
-# 去中心化案件管理系統
+# Real Contract
 
-這是一個基於智能合約的去中心化案件管理系統，允許參與者創建案件、進行投票和執行結果。
+A smart contract system for managing cases, voting, and compensation.
 
-## 功能特點
+## Contract Addresses (Sepolia)
 
-### 案件管理
-- 創建新案件（單個或批量）
-- 設置案件賠償金額
-- 支持多個案件同時進行
-- 案件狀態追蹤（未激活、已激活、投票中、等待執行、已執行、已放棄）
+- RealContract: [0x99cD21960805a4A63D1F3694b6e8C30C59288f48](https://sepolia.etherscan.io/address/0x99cD21960805a4A63D1F3694b6e8C30C59288f48)
+- Voter: [0x3f8214F002D93dFe584104122b7f6a72CF8fd498](https://sepolia.etherscan.io/address/0x3f8214F002D93dFe584104122b7f6a72CF8fd498)
+- FakeERC20: [0xd9405d322951BF6a0185435B7A08525C0a32f219](https://sepolia.etherscan.io/address/0xd9405d322951BF6a0185435B7A08525C0a32f219)
 
-### 投票系統
-- 只有授權的投票者可以參與投票
-- 支持平票情況下的預設勝者
-- 投票時間限制
-- 防止重複投票
+## Participants
 
-### 代幣賠償
-- 使用 ERC20 代幣進行賠償
-- 支持手續費機制（押金和執行時的手續費）
-- 安全的代幣轉移（使用 SafeERC20）
+- Participant A: 0x565d490806A6D8eF532f4d29eC00EF6aAC71A17A
+- Participant B: 0x8d521dCae9C1f7353a96D1510B3B4F9f83413bC9
+- Deployer: 0xcafCE5363A2dEC41e0597B6B3c6c1A11ab219698
 
-### 治理功能
-- 合約管理員可以控制合約運行狀態
-- 可調整手續費率
-- 投票者管理
+## Token Balances
 
-## 合約架構
+- Participant A: 10,000,000 tokens
+- Participant B: 10,000,000 tokens
+- Deployer: 999,999,980,000,000 tokens
 
-### RealContract
-主要合約，整合了案件管理和投票功能：
+## Contract Parameters
 
-#### 狀態變量
-- `voter`: 投票者合約地址
-- `participantA` 和 `participantB`: 案件參與者
-- `running`: 合約運行狀態
-- `compensationToken`: 賠償代幣合約
-- `feeRateForStakeCompensation`: 押金手續費率
-- `feeRateForExecuteCase`: 執行手續費率
+- Fee Rate for Stake Compensation: 1%
+- Fee Rate for Execute Case: 2%
+- Stake Amount: 100 wei
 
-#### 修飾符
-- `onlyParticipantOrGovernance`: 僅允許參與者或治理者調用
-- `onlyParticipant`: 僅允許參與者調用
-- `onlyRunning`: 僅允許在合約運行時調用
+## Features
 
-#### 主要功能
-1. 案件管理
-   - `addCase`: 添加單個案件
-   - `addCases`: 批量添加案件
-   - `stakeCompensation`: 繳納案件押金
-   - `startCaseVoting`: 開始案件投票
-   - `vote`: 進行投票
-   - `executeCase`: 執行案件
-   - `cancelCase`: 取消案件
+- Case Management: Create, stake, and execute cases
+- Voting System: Secure voting mechanism with token-based validation
+- Compensation System: Automated compensation distribution based on voting results
 
-2. 查詢功能
-   - `getCaseResult`: 查詢案件結果
+## Development Setup
 
-3. 治理功能
-   - `setRunning`: 設置合約運行狀態
+1. Install dependencies:
+```bash
+forge install
+```
 
-#### 事件
-- `CaseAdded`: 新案件添加
-- `CaseStaked`: 案件押金繳納
-- `CaseVoted`: 投票記錄
-- `CaseExecuted`: 案件執行
-- `CaseCancelled`: 案件取消
-- `CaseVotingStarted`: 開始投票
-- `ContractStatusChanged`: 合約狀態變更
+2. Compile contracts:
+```bash
+forge build
+```
 
-### CaseManager
-案件管理合約：
-- 案件狀態管理
-- 投票結果計算
-- 案件執行邏輯
+3. Run tests:
+```bash
+forge test
+```
 
-### Voter
-投票者管理合約：
-- 投票者註冊和移除
-- 投票者列表維護
-- 高效的投票者管理（O(1) 添加和刪除）
+4. Deploy to Sepolia:
+```bash
+forge script script/Deploy.s.sol:Deploy --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
+```
 
-## 技術特點
+## Contract Architecture
 
-1. 安全性
-   - 使用 OpenZeppelin 的 SafeERC20 進行安全的代幣轉移
-   - 實現 ReentrancyGuard 防止重入攻擊
-   - 嚴格的權限控制
-   - 完整的狀態檢查
+The system consists of three main contracts:
 
-2. 效率
-   - 優化的投票者管理（O(1) 操作）
-   - 高效的案件狀態轉換
-   - 最小化 gas 消耗
+1. `RealContract`: Main contract handling case management and execution
+2. `Voter`: Manages voter registration and validation
+3. `FakeERC20`: ERC20 token for compensation and voting
 
-3. 可擴展性
-   - 模塊化設計
-   - 清晰的接口定義
-   - 靈活的手續費機制
+## License
 
-## 案件狀態
-
-案件狀態包括：
-- `Inactivated`: 未激活
-- `Activated`: 已激活
-- `Voting`: 投票中
-- `WaitingForExecution`: 等待執行
-- `Executed`: 已執行
-- `Abandoned`: 已放棄
-
-## 開發環境
-
-- Solidity ^0.8.13
-- OpenZeppelin Contracts
-- Forge 測試框架
-
-## 使用說明
-
-1. 部署合約
-   - 設置治理者地址
-   - 設置投票者合約地址
-   - 設置賠償代幣合約地址
-   - 設置參與者地址
-   - 設置手續費率
-
-2. 案件流程
-   - 參與者創建案件
-   - 雙方繳納押金
-   - 開始投票
-   - 投票者進行投票
-   - 執行案件結果
-
-3. 手續費
-   - 押金手續費：在繳納押金時收取
-   - 執行手續費：在執行案件時收取
-
-## 安全考慮
-
-1. 重入保護
-   - 使用 OpenZeppelin 的 ReentrancyGuard
-   - 關鍵函數使用 nonReentrant 修飾符
-
-2. 權限控制
-   - 嚴格的參與者檢查
-   - 治理者權限控制
-   - 投票者權限控制
-
-3. 代幣安全
-   - 使用 SafeERC20 進行代幣轉移
-   - 手續費計算和轉移的安全處理
-
-## 授權
-
-UNLICENSED
+This project is licensed under the MIT License.

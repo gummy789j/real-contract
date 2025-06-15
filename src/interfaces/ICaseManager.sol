@@ -53,10 +53,6 @@ interface ICaseManager {
         string caseName;
         // 案件描述
         string caseDescription;
-        // 參與者A
-        address participantA;
-        // 參與者B
-        address participantB;
         // 賠償金額
         uint256 compensationA;
         uint256 compensationB;
